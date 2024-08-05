@@ -8,6 +8,8 @@ phases:
     commands:
       - echo Checking for build type
       - echo "Logging in to Docker Hub..."
+      - echo "docker username is $DOCKER_HUB_USERNAME"
+      - echo "docker password is $DOCKER_HUB_PASSWORD"
       - echo $DOCKER_HUB_PASSWORD | docker login --username $DOCKER_HUB_USERNAME --password-stdin
       - |
         if expr "${FOLDER_PATH}" : ".*client*" ; then
