@@ -41,10 +41,10 @@ resource "aws_codebuild_project" "aws_codebuild" {
       value = "latest"
     }
 
-    environment_variable {
-      name  = "DYNAMODB_TABLE"
-      value = var.dynamodb_table_name
-    }
+    # environment_variable {
+    #   name  = "DYNAMODB_TABLE"
+    #   value = var.dynamodb_table_name
+    # }
 
     environment_variable {
       name  = "TASK_DEFINITION_FAMILY"
@@ -109,7 +109,17 @@ resource "aws_codebuild_project" "aws_codebuild" {
 
     environment_variable {
       name  = "ACCES_TOKEN_EXPIRE_MINUTES"
-      value = var.acccess_token_expire_minutes
+      value = var.access_token_expire_minutes
+    }
+
+    environment_variable {
+      name = "DOCKER_HUB_USERNAME"
+      value = var.docker_hub_username
+    }
+
+    environment_variable {
+      name = "DOCKER_HUB_PASSWORD"
+      value = var.docker_hub_password
     }
         
     

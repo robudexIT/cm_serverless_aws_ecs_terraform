@@ -93,40 +93,51 @@ variable "repository_branch" {
   default     = "main"
 }
 
- variable "db_host" {
-  description "RDS Enpoint"
-  type = string 
- }
+variable "db_host" {
+  description = "RDS Enpoint"
+  type        = string
+}
 
- variable "db_user" {
+variable "db_user" {
   description = "RDS username"
-  type = string 
- }
+  type        = string
+}
 
 
 variable "db_password" {
   description = "RDS password"
-  type = string
+  type        = string
 }
 
 variable "db_name" {
   description = "RDS database"
-  type = string
+  type        = string
 
 }
 
 variable "secret_key" {
   description = "JWT Token Secret Key"
-  type = string
+  type        = string
 
 }
 
 
 variable "algorithm" {
   description = "JWT Used algorithm"
-  type = string
+  type        = string
 }
 
 variable "access_token_expire_minutes" {
-  type = number
+  type    = number
+  default = 0
+}
+
+variable "docker_hub_username" {
+  type    = string
+  default = ""
+}
+
+variable "docker_hub_password" {
+  type    = string
+  default = ""
 }

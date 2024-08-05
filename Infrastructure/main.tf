@@ -132,7 +132,7 @@ module "ecs_role" {
   create_ecs_role    = true
   name               = var.iam_role_name["ecs"]
   name_ecs_task_role = var.iam_role_name["ecs_task_role"]
-  dynamodb_table     = [module.dynamodb_table.dynamodb_table_arn]
+  # dynamodb_table     = [module.dynamodb_table.dynamodb_table_arn]
 }
 
 # ------- Creating a IAM Policy for role -------
@@ -167,6 +167,8 @@ module "ecs_taks_definition_server" {
   docker_repo        = module.ecr_server.ecr_repository_url
   region             = var.aws_region
   container_port     = var.port_app_server
+
+
 }
 
 # ------- Creating ECS Task Definition for the client -------
@@ -221,7 +223,7 @@ module "ecs_service_server" {
   subnets_id          = [module.networking.private_subnets_server[0], module.networking.private_subnets_server[1]]
   container_port      = var.port_app_server
   container_name      = var.container_name["server"]
-  
+
 }
 
 # ------- Creating ECS Service client -------
@@ -314,6 +316,13 @@ module "codebuild_server" {
   ecs_role               = var.iam_role_name["ecs"]
   ecs_task_role          = var.iam_role_name["ecs_task_role"]
   # dynamodb_table_name    = module.dynamodb_table.dynamodb_table_name
+  db_host                     = var.db_host
+  db_user                     = var.db_user
+  db_password                 = var.db_password
+  db_name                     = var.db_name
+  secret_key                  = var.secret_key
+  algorithm                   = var.algorithm
+  access_token_expire_minutes = var.access_token_expire_minutes
 }
 
 # ------- Creating the client CodeBuild project -------

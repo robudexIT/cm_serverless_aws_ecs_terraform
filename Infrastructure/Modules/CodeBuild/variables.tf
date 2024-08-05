@@ -73,7 +73,7 @@ variable "ecs_task_role" {
 
 
 variable "db_host" {
-  description "RDS Enpoint"
+  description = "RDS Enpoint"
   type = string 
   default     = ""
  }
@@ -114,5 +114,15 @@ variable "algorithm" {
 
 variable "access_token_expire_minutes" {
   type = number
-  default     = ""
+  default = 0
+}
+
+variable "docker_hub_username" {
+  type = string
+  default = ""
+}
+
+variable "docker_hub_password" {
+  type = string
+  default = ""
 }
