@@ -92,3 +92,41 @@ variable "repository_branch" {
   type        = string
   default     = "main"
 }
+
+ variable "db_host" {
+  description "RDS Enpoint"
+  type = string 
+ }
+
+ variable "db_user" {
+  description = "RDS username"
+  type = string 
+ }
+
+
+variable "db_password" {
+  description = "RDS password"
+  type = string
+}
+
+variable "db_name" {
+  description = "RDS database"
+  type = string
+
+}
+
+variable "secret_key" {
+  description = "JWT Token Secret Key"
+  type = string
+
+}
+
+
+variable "algorithm" {
+  description = "JWT Used algorithm"
+  type = string
+}
+
+variable "access_token_expire_minutes" {
+  type = number
+}

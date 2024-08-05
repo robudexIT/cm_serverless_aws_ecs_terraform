@@ -26,3 +26,15 @@ pnpm-debug.log*
 .terraform*
 terraform.tfstate*
 terraform.tfvars
+
+#Ignore env file 
+
+
+*.env
+
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

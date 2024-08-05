@@ -1,18 +1,38 @@
-// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-// SPDX-License-Identifier: MIT-0
+import "bootstrap/dist/css/bootstrap.min.css"
+import "bootstrap"
 
-import Vue from 'vue'
+
+import { createApp, defineAsyncComponent } from 'vue';
+
+
 import App from './App.vue'
-import router from './router'
-import BootstrapVue from 'bootstrap-vue'
-import 'bootstrap/dist/css/bootstrap.css'
-import 'bootstrap-vue/dist/bootstrap-vue.css'
+import BaseContainer from  './components/layout/BaseContainer.vue'
+import BaseTable from './components/layout/BaseTable.vue'
+//import BaseSpinner from './components/layout/BaseSpinner.vue'
+//import BaseDialog from './components/layout/BaseDialog.vue'
 
-Vue.use(BootstrapVue)
+//async-lazy download good for production
+const BaseDialog = defineAsyncComponent(() => import('./components/layout/BaseDialog.vue'))
+const BaseSpinner = defineAsyncComponent(() => import('./components/layout/BaseSpinner.vue'))
 
-Vue.config.productionTip = false
+import store from './store/index.js'
+import router from './router.js'
 
-new Vue({
-  router,
-  render: h => h(App)
-}).$mount('#app')
+
+const app = createApp(App)
+
+
+app.component('base-container',BaseContainer)
+app.component('base-table', BaseTable)
+app.component('base-spinner',BaseSpinner)
+app.component('base-dialog',BaseDialog)
+
+
+app.use(store)
+app.use(router)
+
+console.log('this is main')
+
+app.mount('#app')
+
+

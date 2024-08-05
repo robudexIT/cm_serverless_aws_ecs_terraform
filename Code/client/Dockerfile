@@ -1,16 +1,33 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: MIT-0
+FROM node:16.20.2 AS build
 
-# build stage
-FROM public.ecr.aws/bitnami/node:16 as build-stage
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
+RUN npm install -g npm@8.19.4
 
-# production stage
-FROM public.ecr.aws/nginx/nginx:latest as production-stage
-COPY --from=build-stage /app/dist /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+WORKDIR /app 
+
+COPY package.json ./ 
+COPY package-lock.json ./
+
+RUN npm install 
+
+
+COPY . . 
+
+
+RUN npm run build 
+
+
+FROM nginx
+
+
+COPY --from=build /app/dist/ /usr/share/nginx/html/cm_app/ 
+
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+
+EXPOSE 80 
+
+
+# CMD ["nginx", "-g", "daemon off;"]
+
+

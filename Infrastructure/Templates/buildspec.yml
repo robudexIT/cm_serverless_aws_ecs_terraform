@@ -12,14 +12,23 @@ phases:
       - |
         if expr "${FOLDER_PATH}" : ".*client*" ; then
           echo "Client build, embedding frontend layer file with ALB backend DNS"
-          sed -i "s|<SERVER_ALB_URL>|$SERVER_ALB_URL|g" ./Code/client/src/services/RestServices.js
+          export VUE_APP_API_ENDPOINT="$SERVER_ALB_URL"
+          echo "CREATE .env file in client folder"
+          touch  ./Code/client/.env
+          echo " VUE_APP_API_ENDPOINT=$SERVER_ALB_URL" >>  ./Code/client/.env  
+
         else
           echo "Server build, adding ECS Task Role to the task definition file"
           sed -i "3i\"taskRoleArn\": \"arn:aws:iam::<AWS_ACCOUNT_ID>:role/<ECS_TASK_ROLE>\"," ./Infrastructure/Templates/taskdef.json
-          echo "Replacing table name in the server function"
-          sed -i "s|DYNAMODB_TABLE|$DYNAMODB_TABLE|g" ./Code/server/src/app.js
-          echo "Adding Swagger host"
-          sed -i "s|<SERVER_ALB_URL>|$SERVER_ALB_URL|g" ./Code/server/src/swagger/swagger.js
+          echo "CREATE .env file in server folder"
+          touch  ./Code/server/.env 
+          echo "DB_HOST=$DB_HOST" >>  ./Code/server/.env 
+          echo "DB_NAME=$DB_NAME" >>  ./Code/server/.env 
+          echo "DB_PASSWORD=$DB_DB_PASSWORD" >>  ./Code/server/.env                         
+          echo "DB_USER=$DB_USER" >>  ./Code/server/.env 
+          echo "SECRET_KEY=$SERCRET_KEY" >>  ./Code/server/.env 
+          echo "ALGORITHM=$ALGORITHM" >>  ./Code/server/.env 
+          echo "ACCESS_TOKEN_EXPIRE_MINUTES=$ACCESS_TOKEN_EXPIRE_MINUTES" >>  ./Code/server/.env                                       
         fi
   build:
     commands:

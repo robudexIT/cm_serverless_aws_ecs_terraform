@@ -80,6 +80,41 @@ resource "aws_codebuild_project" "aws_codebuild" {
       name  = "SERVER_ALB_URL"
       value = var.server_alb_url
     }
+
+    environment_variable {
+      name  = "DB_HOST"
+      value = var.db_host
+    }
+
+    environment_variable {
+      name  = "DB_USER"
+      value = var.db_user
+    }
+
+    environment_variable {
+      name  = "DB_PASSWORD"
+      value = var.db_password
+    }
+
+
+    environment_variable {
+      name  = "DB_NAME"
+      value = var.db_name
+    }
+
+    environment_variable {
+      name  = "ALGORITHM"
+      value = var.algorithm
+    }
+
+    environment_variable {
+      name  = "ACCES_TOKEN_EXPIRE_MINUTES"
+      value = var.acccess_token_expire_minutes
+    }
+        
+    
+
+    
   }
 
   logs_config {

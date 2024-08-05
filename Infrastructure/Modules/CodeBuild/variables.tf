@@ -65,8 +65,54 @@ variable "ecs_task_role" {
   default     = "null"
 }
 
-variable "dynamodb_table_name" {
-  description = "The name of Dynamodb table used by the server application"
-  type        = string
+# variable "dynamodb_table_name" {
+#   description = "The name of Dynamodb table used by the server application"
+#   type        = string
+#   default     = ""
+# }
+
+
+variable "db_host" {
+  description "RDS Enpoint"
+  type = string 
+  default     = ""
+ }
+
+ variable "db_user" {
+  description = "RDS username"
+  type = string 
+  default     = ""
+ }
+
+
+variable "db_password" {
+  description = "RDS password"
+  type = string
+  default     = ""
+}
+
+variable "db_name" {
+  description = "RDS database"
+  type = string
+  default     = ""
+
+}
+
+variable "secret_key" {
+  description = "JWT Token Secret Key"
+  type = string
+  default     = ""
+
+}
+
+
+variable "algorithm" {
+  description = "JWT Used algorithm"
+  type = string
+  default     = ""
+}
+
+variable "access_token_expire_minutes" {
+  type = number
   default     = ""
 }

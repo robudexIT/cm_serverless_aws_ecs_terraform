@@ -221,6 +221,7 @@ module "ecs_service_server" {
   subnets_id          = [module.networking.private_subnets_server[0], module.networking.private_subnets_server[1]]
   container_port      = var.port_app_server
   container_name      = var.container_name["server"]
+  
 }
 
 # ------- Creating ECS Service client -------
@@ -312,7 +313,7 @@ module "codebuild_server" {
   service_port           = var.port_app_server
   ecs_role               = var.iam_role_name["ecs"]
   ecs_task_role          = var.iam_role_name["ecs_task_role"]
-  dynamodb_table_name    = module.dynamodb_table.dynamodb_table_name
+  # dynamodb_table_name    = module.dynamodb_table.dynamodb_table_name
 }
 
 # ------- Creating the client CodeBuild project -------
@@ -385,7 +386,7 @@ module "s3_assets" {
 }
 
 # ------- Creating Dynamodb table by the Back-end -------
-module "dynamodb_table" {
-  source = "./Modules/Dynamodb"
-  name   = "assets-table-${var.environment_name}"
-}
+# module "dynamodb_table" {
+#   source = "./Modules/Dynamodb"
+#   name   = "assets-table-${var.environment_name}"
+# }

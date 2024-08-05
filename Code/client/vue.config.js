@@ -1,11 +1,7 @@
+// vue.config.js file to be place in the root of your repository
+
 module.exports = {
-    publicPath: '/',
-    chainWebpack: config => {
-      config.module.rules.delete('eslint');
-    },
-    devServer: {
-      port: 3000,
-      disableHostCheck: true
-    }
-  }
-  
+ publicPath: '/cm_app'  // production
+// publicPath: ''  
+
+}

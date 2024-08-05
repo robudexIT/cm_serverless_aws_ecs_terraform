@@ -1,18 +1,20 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: MIT-0
+FROM python:3.10-slim
 
-FROM public.ecr.aws/bitnami/node:latest
 
-RUN mkdir -p /home/node/app/node_modules
+WORKDIR /app
 
-WORKDIR /home/node/app
 
-COPY package*.json ./
+COPY requirements.txt .
 
-RUN npm install
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
 
-EXPOSE 3001
+COPY ./app . 
 
-CMD [ "npm", "start" ]
+EXPOSE 8000
+
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+
+
