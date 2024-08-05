@@ -46,3 +46,4 @@ variable "codedeploy_role" {
   description = "The role to be assumed by CodeDeploy"
   type        = string
 }
+

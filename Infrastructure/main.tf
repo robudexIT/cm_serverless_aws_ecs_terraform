@@ -323,23 +323,34 @@ module "codebuild_server" {
   secret_key                  = var.secret_key
   algorithm                   = var.algorithm
   access_token_expire_minutes = var.access_token_expire_minutes
+  docker_hub_username         = var.docker_hub_username
+  docker_hub_password         = var.docker_hub_password
 }
 
 # ------- Creating the client CodeBuild project -------
 module "codebuild_client" {
-  source                 = "./Modules/CodeBuild"
-  name                   = "codebuild-${var.environment_name}-client"
-  iam_role               = module.devops_role.arn_role
-  region                 = var.aws_region
-  account_id             = data.aws_caller_identity.id_current_account.account_id
-  ecr_repo_url           = module.ecr_client.ecr_repository_url
-  folder_path            = var.folder_path_client
-  buildspec_path         = var.buildspec_path
-  task_definition_family = module.ecs_taks_definition_client.task_definition_family
-  container_name         = var.container_name["client"]
-  service_port           = var.port_app_client
-  ecs_role               = var.iam_role_name["ecs"]
-  server_alb_url         = module.alb_server.dns_alb
+  source                      = "./Modules/CodeBuild"
+  name                        = "codebuild-${var.environment_name}-client"
+  iam_role                    = module.devops_role.arn_role
+  region                      = var.aws_region
+  account_id                  = data.aws_caller_identity.id_current_account.account_id
+  ecr_repo_url                = module.ecr_client.ecr_repository_url
+  folder_path                 = var.folder_path_client
+  buildspec_path              = var.buildspec_path
+  task_definition_family      = module.ecs_taks_definition_client.task_definition_family
+  container_name              = var.container_name["client"]
+  service_port                = var.port_app_client
+  ecs_role                    = var.iam_role_name["ecs"]
+  server_alb_url              = module.alb_server.dns_alb
+  db_host                     = var.db_host
+  db_user                     = var.db_user
+  db_password                 = var.db_password
+  db_name                     = var.db_name
+  secret_key                  = var.secret_key
+  algorithm                   = var.algorithm
+  access_token_expire_minutes = var.access_token_expire_minutes
+  docker_hub_username         = var.docker_hub_username
+  docker_hub_password         = var.docker_hub_password
 }
 
 # ------- Creating the server CodeDeploy project -------
