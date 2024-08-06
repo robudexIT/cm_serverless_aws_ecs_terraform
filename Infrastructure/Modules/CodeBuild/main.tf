@@ -108,7 +108,7 @@ resource "aws_codebuild_project" "aws_codebuild" {
     }
 
     environment_variable {
-      name  = "ACCES_TOKEN_EXPIRE_MINUTES"
+      name  = "ACCESS_TOKEN_EXPIRE_MINUTES"
       value = var.access_token_expire_minutes
     }
 

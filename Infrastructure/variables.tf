@@ -30,7 +30,7 @@ variable "github_token" {
 variable "port_app_server" {
   description = "The port used by your server application"
   type        = number
-  default     = 3001
+  default     = 80
 }
 
 variable "port_app_client" {
