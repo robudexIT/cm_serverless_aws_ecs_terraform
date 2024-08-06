@@ -1,11 +1,20 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
-
+from fastapi.responses import JSONResponse
 from routers import login, call_summary, call_details, metris,agents,cdrs, search_number, counts, tag
 
 
 app = FastAPI()
 
+@app.get("/status")
+def check_getstaus():
+    
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content= {"message": "I am up.."}
+                    
+    )
+    
 
 app.add_middleware(
     CORSMiddleware,
