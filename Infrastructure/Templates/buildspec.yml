@@ -16,8 +16,8 @@ phases:
           echo "Client build, embedding frontend layer file with ALB backend DNS"
           export VUE_APP_API_ENDPOINT="$SERVER_ALB_URL"
           echo "CREATE .env file in client folder"
-          touch  ./Code/client/.env
-          echo "VUE_APP_API_ENDPOINT=$SERVER_ALB_URL" >>  ./Code/client/.env
+          touch  $FOLDER_PATH/.env
+          echo "VUE_APP_API_ENDPOINT=$SERVER_ALB_URL" >>  $FOLDER_PATH/.env
         else
           echo "Server build, adding ECS Task Role to the task definition file"
           sed -i "3i\"taskRoleArn\": \"arn:aws:iam::$AWS_ACCOUNT_ID:role/$ECS_TASK_ROLE\"," ./Infrastructure/Templates/taskdef.json
@@ -25,14 +25,14 @@ phases:
           echo $DB_HOST
           echo $DB_USER
           echo $DB_NAME
-          touch  ./Code/server/.env
-          echo "DB_HOST=$DB_HOST" >>  ./Code/server/.env
-          echo "DB_NAME=$DB_NAME" >>  ./Code/server/.env
-          echo "DB_PASSWORD=$DB_PASSWORD" >>  ./Code/server/.env
-          echo "DB_USER=$DB_USER" >>  ./Code/server/.env
-          echo "SECRET_KEY=$SECRET_KEY" >>  ./Code/server/.env
-          echo "ALGORITHM=$ALGORITHM" >>  ./Code/server/.env
-          echo "ACCESS_TOKEN_EXPIRE_MINUTES=$ACCESS_TOKEN_EXPIRE_MINUTES" >>  ./Code/server/.env
+          touch  $FOLDER_PATH/app/.env
+          echo "DB_HOST=$DB_HOST" >>  $FOLDER_PATH/app/.env
+          echo "DB_NAME=$DB_NAME" >>  $FOLDER_PATH/app/.env
+          echo "DB_PASSWORD=$DB_PASSWORD" >>  $FOLDER_PATH/app/.env
+          echo "DB_USER=$DB_USER" >>  $FOLDER_PATH/app/.env
+          echo "SECRET_KEY=$SECRET_KEY" >>  $FOLDER_PATH/app/.env
+          echo "ALGORITHM=$ALGORITHM" >>  $FOLDER_PATH/app/.env
+          echo "ACCESS_TOKEN_EXPIRE_MINUTES=$ACCESS_TOKEN_EXPIRE_MINUTES" >>  $FOLDER_PATH/app/.env
         fi
   build:
     commands:
