@@ -39,7 +39,7 @@ phases:
       - echo Build started on `date`
       - echo Building the Docker image...
       # - docker build -t $REPO_URL $FOLDER_PATH
-      - docker build -t robudex17/cm_api
+      - docker build -t robudex17/cm_api $FOLDER_PATH
    
   post_build:
     commands:
