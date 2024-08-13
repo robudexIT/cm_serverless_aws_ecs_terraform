@@ -187,21 +187,23 @@ module "ecs_taks_definition_client" {
 
 # ------- Creating a server Security Group for ECS TASKS -------
 module "security_group_ecs_task_server" {
-  source          = "./Modules/SecurityGroup"
-  name            = "ecs-task-${var.environment_name}-server"
-  description     = "Controls access to the server ECS task"
-  vpc_id          = module.networking.aws_vpc
-  ingress_port    = var.port_app_server
-  security_groups = [module.security_group_alb_server.sg_id]
+  source            = "./Modules/SecurityGroup"
+  name              = "ecs-task-${var.environment_name}-server"
+  description       = "Controls access to the server ECS task"
+  vpc_id            = module.networking.aws_vpc
+  ingress_port      = var.port_app_server
+  security_groups   = [module.security_group_alb_server.sg_id]
+  add_mysql_sg_rule = "yes"
 }
 # ------- Creating a client Security Group for ECS TASKS -------
 module "security_group_ecs_task_client" {
-  source          = "./Modules/SecurityGroup"
-  name            = "ecs-task-${var.environment_name}-client"
-  description     = "Controls access to the client ECS task"
-  vpc_id          = module.networking.aws_vpc
-  ingress_port    = var.port_app_client
-  security_groups = [module.security_group_alb_client.sg_id]
+  source            = "./Modules/SecurityGroup"
+  name              = "ecs-task-${var.environment_name}-client"
+  description       = "Controls access to the client ECS task"
+  vpc_id            = module.networking.aws_vpc
+  ingress_port      = var.port_app_client
+  security_groups   = [module.security_group_alb_client.sg_id]
+  add_mysql_sg_rule = "no"
 }
 
 # ------- Creating ECS Cluster -------
@@ -406,7 +408,7 @@ module "s3_assets" {
 }
 
 # ------- Creating Dynamodb table by the Back-end -------
-# module "dynamodb_table" {
-#   source = "./Modules/Dynamodb"
-#   name   = "assets-table-${var.environment_name}"
-# }
+module "dynamodb_table" {
+  source = "./Modules/Dynamodb"
+  name   = "assets-table-${var.environment_name}"
+}

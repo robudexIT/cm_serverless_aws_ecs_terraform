@@ -17,7 +17,7 @@ phases:
           export VUE_APP_API_ENDPOINT="$SERVER_ALB_URL"
           echo "CREATE .env file in client folder"
           touch  $FOLDER_PATH/.env
-          echo "VUE_APP_API_ENDPOINT=$SERVER_ALB_URL" >>  $FOLDER_PATH/.env
+          echo "VUE_APP_API_ENDPOINT=http://$SERVER_ALB_URL" >> $FOLDER_PATH/.env
         else
           echo "Server build, adding ECS Task Role to the task definition file"
           sed -i "3i\"taskRoleArn\": \"arn:aws:iam::$AWS_ACCOUNT_ID:role/$ECS_TASK_ROLE\"," ./Infrastructure/Templates/taskdef.json
