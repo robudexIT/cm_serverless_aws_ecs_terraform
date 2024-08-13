@@ -46,8 +46,8 @@ variable "cidr_blocks_egress" {
   default     = ["0.0.0.0/0"]
 }
 
-variable "add_mysql_sg_rule" {
-  description = "Security Group Placement."
-  type        = string
-  default     = null
-}
+# variable "add_mysql_sg_rule" {
+#   description = "Security Group Placement."
+#   type        = string
+#   default     = null
+# }

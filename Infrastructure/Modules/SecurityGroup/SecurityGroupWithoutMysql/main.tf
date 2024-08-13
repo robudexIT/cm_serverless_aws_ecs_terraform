@@ -30,13 +30,13 @@ resource "aws_security_group" "sg" {
   }
 }
 
-  resource "aws_security_group_rule" "allow_mysql" {
-  count = var.add_mysql_sg_rule  == "yes" ? 1 : 0
+#   resource "aws_security_group_rule" "allow_mysql" {
+#   count = var.add_mysql_sg_rule  == "yes" ? 1 : 0
 
-  type              = "ingress"
-  from_port         = 3306
-  to_port           = 3306
-  protocol          = "tcp"
-  security_group_id = aws_security_group.sg.id
-  source_security_group_id = aws_security_group.sg.id
-}
+#   type              = "ingress"
+#   from_port         = 3306
+#   to_port           = 3306
+#   protocol          = "tcp"
+#   security_group_id = aws_security_group.sg.id
+#   source_security_group_id = aws_security_group.sg.id
+# }

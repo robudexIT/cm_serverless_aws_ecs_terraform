@@ -88,13 +88,13 @@ resource "aws_eip" "eip" {
 }
 
 # ------- Attach EIP to Nat Gateway -------
-resource "aws_nat_gateway" "natgw" {
-  allocation_id = aws_eip.eip.id
-  subnet_id     = aws_subnet.public_subnets[0].id
-  tags = {
-    Name = "nat_${var.name}"
-  }
-}
+# resource "aws_nat_gateway" "natgw" {
+#   allocation_id = aws_eip.eip.id
+#   subnet_id     = aws_subnet.public_subnets[0].id
+#   tags = {
+#     Name = "nat_${var.name}"
+#   }
+# }
 
 # ------- Create Private Route Private Table -------
 resource "aws_route_table" "rt_private" {
@@ -103,7 +103,8 @@ resource "aws_route_table" "rt_private" {
   # ------- Internet Route -------
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_nat_gateway.natgw.id
+    # gateway_id = aws_nat_gateway.natgw.id
+    gateway_id = aws_internet_gateway.igw.id
   }
 
   tags = {
