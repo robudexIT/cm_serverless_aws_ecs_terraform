@@ -141,3 +141,4 @@ variable "docker_hub_password" {
   type    = string
   default = ""
 }
+

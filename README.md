@@ -1,221 +1,440 @@
-# Amazon ECS Demo with fullstack app / DevOps practices / Terraform sample
+# CDR MONITORING APP (SERVERLESS) AWS ECS FARGATE
 
-## Table of content
 
-   * [Solution overview](#solution-overview)
-   * [General information](#general-information)
-   * [Infrastructure](#infrastructure)
-      * [Infrastructure Architecture](#infrastructure-architecture)
-        * [Infrastructure considerations due to demo proposals](#infrastructure-considerations-due-to-demo-proposals)
-      * [CI/CD Architecture](#ci/cd-architecture)
-      * [Prerequisites](#prerequisites)
-      * [Usage](#usage)
-      * [Autoscaling test](#autoscaling-test)
-   * [Application Code](#application-code)
-     * [Client app](#client-app)
-       * [Client considerations due to demo proposal](#client-considerations-due-to-demo-proposals)
-     * [Server app](#server-app)
-   * [Cleanup](#cleanup)
-   * [Security](#security)
-   * [License](#license)
+In this project, I utilized the infrastructure setup provided in the [aws-samples repository](https://github.com/aws-samples/amazon-ecs-fullstack-app-terraform) as a foundation. This repository contains a Terraform configuration for deploying a full-stack application on Amazon ECS, which I adapted to meet the specific requirements of my project. Again, as part of my journey in learning DevOps and coding, I plan to build a similar project on-premises and then transition it to a serverless architecture, this time using AWS ECS.
+
+
+
+## ON Premise project app.
+
+**Architecture** 
+
+![OnpremArch](Documentation_assets/callmonitoring_app_onprem.png)
+
+**Technologies Used**
+- Frontend --> VUEJS Framework.
+- Backend/API  --> PHP 
+- Authentication --> JWT TOKEN
+- Database --> Mysql
+
+
+## AWS Serveless Project App (AWS-ECS FARGATE)
+
+
+![ServerlessArch](Documentation_assets/cm_serverless_aws_ecs_faragate_arch.png)
+
+**Technologies Used**
+- Frontend --> AWS ECS FARGATE
+- Backend --> AWS ECS FARGATE
+- Database --> RDS Mysql
+- Authentication -->  JWT TOKEN
+- Infrastructure As Code - Terraform
+
+** I made only minimal adjustments to the Terraform infrastructure from this project to suit my needs. I tweaked a few settings, removed resources that were unnecessary for my project, and added the ones I required**
+
+Resource Remove:
+ - Dynamodb -> Because my project is using MySQL Database I replace it with RDS Instance 
+
+Resource Added and Update:
+- RDS Database
+- Security Group -  I split SecurityGroup Modules, one is with Mysql Rule and one without.
+- CodeBuild - Added more environment variables 
+- buildspec.yaml - also change base on my project requirements
+- Code - My frontend and backend code. Dockerfiles are updated as well.
+
+
+## Project Implementation and Walkthrough
+
+1. Clone the aws-samples [amazon-ecs-fullstack-app-terraform](https://github.com/aws-samples/amazon-ecs-fullstack-app-terraform.git) 
+
+```bash
+   git clone https://github.com/aws-samples/amazon-ecs-fullstack-app-terraform.git
+```
+
+
+2. Update aws-ecs-fullstack-app-terraform/Infrastructure/Templates/buildspec.yaml to
+
+```yaml
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Checking for build type
+      - echo "Logging in to Docker Hub..."
+      - echo "docker username is $DOCKER_HUB_USERNAME"
+      - echo "docker password is $DOCKER_HUB_PASSWORD"
+      - echo $DOCKER_HUB_PASSWORD | docker login --username $DOCKER_HUB_USERNAME --password-stdin
+      - |
+        if expr "${FOLDER_PATH}" : ".*client*" ; then
+          echo "Client build, embedding frontend layer file with ALB backend DNS"
+          export VUE_APP_API_ENDPOINT="$SERVER_ALB_URL"
+          echo "CREATE .env file in client folder"
+          touch  $FOLDER_PATH/.env
+          echo "VUE_APP_API_ENDPOINT=http://$SERVER_ALB_URL" >> $FOLDER_PATH/.env
+        else
+          echo "Server build, adding ECS Task Role to the task definition file"
+          sed -i "3i\"taskRoleArn\": \"arn:aws:iam::$AWS_ACCOUNT_ID:role/$ECS_TASK_ROLE\"," ./Infrastructure/Templates/taskdef.json
+          echo "CREATE .env file in server folder"
+          echo $DB_HOST
+          echo $DB_USER
+          echo $DB_NAME
+          touch  $FOLDER_PATH/app/.env
+          echo "DB_HOST=$DB_HOST" >>  $FOLDER_PATH/app/.env
+          echo "DB_NAME=$DB_NAME" >>  $FOLDER_PATH/app/.env
+          echo "DB_PASSWORD=$DB_PASSWORD" >>  $FOLDER_PATH/app/.env
+          echo "DB_USER=$DB_USER" >>  $FOLDER_PATH/app/.env
+          echo "SECRET_KEY=$SECRET_KEY" >>  $FOLDER_PATH/app/.env
+          echo "ALGORITHM=$ALGORITHM" >>  $FOLDER_PATH/app/.env
+          echo "ACCESS_TOKEN_EXPIRE_MINUTES=$ACCESS_TOKEN_EXPIRE_MINUTES" >>  $FOLDER_PATH/app/.env
+        fi
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t $REPO_URL $FOLDER_PATH
+      - docker logout
+      # - docker build -t robudex17/cm_api $FOLDER_PATH
    
+  post_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - docker push $REPO_URL:$IMAGE_TAG
+      # - docker push robudex17/cm_api
+      - echo Changing directory to Templates directory
+      - cd ./Infrastructure/Templates
+      - echo Preparing spec files in new folder
+      - mkdir Artifacts
+      - cp appspec.yaml Artifacts/appspec.yaml && cp taskdef.json Artifacts/taskdef.json
+      - echo Changing directory to the Artifacts directory
+      - cd Artifacts
+      - echo Preparing artifacts
+      - sed -i "s|<TASK_DEFINITION_FAMILY>|$TASK_DEFINITION_FAMILY|g" taskdef.json
+      - sed -i "s|<CONTAINER_NAME>|$CONTAINER_NAME|g" appspec.yaml taskdef.json
+      - sed -i "s|<SERVICE_PORT>|$SERVICE_PORT|g" appspec.yaml taskdef.json
+      - sed -i "s|<ECS_ROLE>|$ECS_ROLE|g" taskdef.json
+      - sed -i "s|<ECS_TASK_ROLE>|$ECS_TASK_ROLE|g" taskdef.json
+      - sed -i "s|<REPO_URL>|$REPO_URL|g" taskdef.json
+      - sed -i "s|<AWS_ACCOUNT_ID>|$AWS_ACCOUNT_ID|g" taskdef.json
+      - sed -i "s|<AWS_REGION>|$AWS_REGION|g" taskdef.json
 
-## Solution overview
+artifacts:
+  files:
+    - '**/*'
+  base-directory: 'Infrastructure/Templates/Artifacts'
+  discard-paths: yes
 
-This repository contains Terraform code to deploy a solution that is intended to be used to run a demo. It shows how AWS resources can be used to build an architecture that reduces defects while deploying, eases remediation, mitigates deployment risks and improves the flow into production environments while gaining the advantages of a managed underlying infrastructure for containers.
-
-## General information
-
-The project has been divided into two parts: 
-- Code: the code for the running application
-    - client: Vue.js code for the frontend application
-    - server: Node.js code for the backend application
-- Infrastructure: contains the Terraform code to deploy the needed AWS resources for the solution
-
-## Infrastructure
-
-The Infrastructure folder contains the terraform code to deploy the AWS resources. The *Modules* folder has been created to store the Terraform modules used in this project. The *Templates* folder contains the different configuration files needed within the modules. The Terraform state is stored locally in the machine where you execute the terraform commands, but feel free to set a Terraform backend configuration like an AWS S3 Bucket or Terraform Cloud to store the state remotely. The AWS resources created by the script are detailed bellow:
-
-- AWS Networking resources, following best practices for HA
-- 2 ECR Repositories
-- 1 ECS Cluster
-- 2 ECS Services
-- 2 Task definitions
-- 4 Autoscaling Policies + Cloudwatch Alarms
-- 2 Application Load Balancer (Public facing)
-- IAM Roles and policies for ECS Tasks, CodeBuild, CodeDeploy and CodePipeline
-- Security Groups for ALBs and ECS tasks
-- 2 CodeBuild Projects
-- 2 CodeDeploy Applications
-- 1 CodePipeline pipeline
-- 2 S3 Buckets (1 used by CodePipeline to store the artifacts and another one used to store assets accessible from within the application)
-- 1 DynamoDB table (used by the application)
-- 1 SNS topic for notifications
-
-## Infrastructure Architecture
-
-The following diagram represents the Infrastructure architecture being deployed with this project:
-
-<p align="center">
-  <img src="Documentation_assets/Infrastructure_architecture.png"/>
-</p>
-
-### Infrastructure considerations due to demo proposals
-The task definition template (Infrastructure/Templates/taskdef.json) that enables the CodePipeline to execute a Blue/Green deployment in ECS has hardcoded values for the memory and CPU values for the server and client application.
-
-Feel free to change it, by adding for example a set of "sed" commands in CodeBuild (following the ones already provided as example) to replace the values dynamically.
-
-Feel free to create a subscriptor for the SNS topic created by this code, in order to get informed of the status of each finished CodeDeploy deployment.
-
-## CI/CD Architecture
-
-The following diagram represents the CI/CD architecture being deployed with this project:
-
-<p align="center">
-  <img src="Documentation_assets/CICD_architecture.png"/>
-</p>
-
-## Prerequisites
-There are general steps that you must follow in order to launch the infrastructure resources.
-
-Before launching the solution please follow the next steps:
-
-1) Install Terraform, use Terraform v0.13 or above. You can visit [this](https://releases.hashicorp.com/terraform/) Terraform official webpage to download it.
-2) Configure the AWS credentials into your machine (~/.aws/credentials). You need to use the following format:
-
-```shell
-    [AWS_PROFILE_NAME]
-    aws_access_key_id = Replace_with_the_correct_access_Key
-    aws_secret_access_key = Replace_with_the_correct_secret_Key
 ```
 
-3) Generate a GitHub token. You can follow [this](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) steps to generate it.
+3. Split SecurityGroup in two  Modules
+- aws-ecs-fullstack-app-terraform/Infrastructure/Modules/SecurityGroup/SecurityGroupWithMysql => Include Mysql Inbound Rules.
+- aws-ecs-fullstack-app-terraform/Infrastructure/Modules/SecurityGroup/SecurityGroupWithMysql => No Inbound Rules Included.
 
-## Usage
 
-**1.** Fork this repository and create the GitHub token granting access to this new repository in your account.
+4. Added variables aws-ecs-fullstack-app-terraform/Infrastructure/Modules/CodeBuild/variables.tf  and Comment dynamodb variable.
 
-**2.** Clone that recently forked repository from your account (not the one from the aws-sample organization) and change the directory to the appropriate one as shown below:
+```bash 
+
+variable "db_host" {
+  description = "RDS Enpoint"
+  type = string 
+  default     = ""
+ }
+
+ variable "db_user" {
+  description = "RDS username"
+  type = string 
+  default     = ""
+ }
+
+
+variable "db_password" {
+  description = "RDS password"
+  type = string
+  default     = ""
+}
+
+variable "db_name" {
+  description = "RDS database"
+  type = string
+  default     = ""
+
+}
+
+variable "secret_key" {
+  description = "JWT Token Secret Key"
+  type = string
+  default     = ""
+
+}
+
+
+variable "algorithm" {
+  description = "JWT Used algorithm"
+  type = string
+  default     = ""
+}
+
+variable "access_token_expire_minutes" {
+  type = number
+  default = 0
+}
+
+variable "docker_hub_username" {
+  type = string
+  default = ""
+}
+
+variable "docker_hub_password" {
+  type = string
+  default = ""
+}
+```
+5. Add these environments variables on aws-ecs-fullstack-app-terraform/Infrastructure/Modules/CodeBuild/main.tf as well. And comment the dynamodb environment variable.
 
 ```bash
-cd Infrastructure/
+    environment_variable {
+      name  = "DB_HOST"
+      value = var.db_host
+    }
+
+    environment_variable {
+      name  = "DB_USER"
+      value = var.db_user
+    }
+
+    environment_variable {
+      name  = "DB_PASSWORD"
+      value = var.db_password
+    }
+
+
+    environment_variable {
+      name  = "DB_NAME"
+      value = var.db_name
+    }
+
+    environment_variable {
+      name  = "ALGORITHM"
+      value = var.algorithm
+    }
+
+    environment_variable {
+      name  = "ACCESS_TOKEN_EXPIRE_MINUTES"
+      value = var.access_token_expire_minutes
+    }
+
+    environment_variable {
+      name = "DOCKER_HUB_USERNAME"
+      value = var.docker_hub_username
+    }
+
+    environment_variable {
+      name = "DOCKER_HUB_PASSWORD"
+      value = var.docker_hub_password
+    }
+       
 ```
 
-**3.** Run Terraform init to download the providers and install the modules
+6. On aws-ecs-fullstack-app-terraform/Code, I deleted client and backend folder. And replace it with my project code.
 
-```shell
-terraform init 
-```
-**4.** Run the terraform plan command, feel free to use a tfvars file to specify the variables.
-You need to set at least the following variables:
-+ **aws_profile** = according to the profiles name in ~/.aws/credentials
-+ **aws_region** = the AWS region in which you want to create the resources
-+ **environment_name** = a unique name used for concatenation to give place to the resources names
-+ **github_token** = your GitHub token, the one generated a few steps above
-+ **repository_name** = your GitHub repository name
-+ **repository_owner** = the owner of the GitHub repository used
 
-```shell
-terraform plan -var aws_profile="your-profile" -var aws_region="your-region" -var environment_name="your-env" -var github_token="your-personal-token" -var repository_name="your-github-repository" -var repository_owner="the-github-repository-owner"
-```
-
-Example of the previous command with replaced dummy values:
-
-```shell
-terraform plan -var aws_profile="development" -var aws_region="eu-central-1" -var environment_name="developmentenv" -var github_token="your-personal-token" -var repository_name="your-github-repository" -var repository_owner="the-github-repository-owner"
-```
- 
-**5.** Review the terraform plan, take a look at the changes that terraform will execute:
-
-```shell
-terraform apply -var aws_profile="your-profile" -var aws_region="your-region" -var environment_name="your-env" -var github_token="your-personal-token" -var repository_name="your-github-repository" -var repository_owner="the-github-repository-owner"
-```
-
-**6.** Once Terraform finishes the deployment, open the AWS Management Console and go to the AWS CodePipeline service. You will see that the pipeline, which was created by this Terraform code, is in progress. Add some files and DynamoDB items as mentioned [here](#client-considerations-due-to-demo-proposals). Once the pipeline finished successfully and the before assets were added, go back to the console where Terraform was executed, copy the *application_url* value from the output and open it in a browser.
-
-**7.** In order to access the also implemented Swagger endpoint, copy the *swagger_endpoint* value from the Terraform output and open it in a browser.
-
-## Autoscaling test
-
-To test how your application will perform under a peak of traffic, a stress test configuration file is provided.
-
-For this stress test [Artillery](https://artillery.io/) is being used. Please be sure to install it following [these](https://artillery.io/docs/guides/getting-started/installing-artillery.html) steps.
-
-Once installed, please change the ALB DNS to the desired layer to test (front/backend) in the **target** attribute, which you can copy from the generated Terraform output, or you can also search it in the AWS Management Console.
-
-To execute it, run the following commands:
-
-*Frontend layer:*
+7. On aws-ecs-fullstack-app-terraform/Infrastructure/main.tf file, I comment any dynamodb  related resources and settings and update some settings.
+- module "security_group_alb_server" 
 ```bash
-artillery run Code/client/src/tests/stresstests/stress_client.yml
-```
+  module "security_group_alb_server" {
+  source              = "./Modules/SecurityGroup/SecurityGroupWithoutMysql"
+  name                = "alb-${var.environment_name}-server"
+  description         = "Controls access to the server ALB"
+  vpc_id              = module.networking.aws_vpc
+  cidr_blocks_ingress = ["0.0.0.0/0"]
+  ingress_port        = 80
 
-*Backend layer:*
+}
+```
+- module "security_group_alb_client"
+
 ```bash
-artillery run Code/server/src/tests/stresstests/stress_server.yml
+  module "security_group_alb_client" {
+  source              = "./Modules/SecurityGroup/SecurityGroupWithoutMysql"
+  name                = "alb-${var.environment_name}-client"
+  description         = "Controls access to the client ALB"
+  vpc_id              = module.networking.aws_vpc
+  cidr_blocks_ingress = ["0.0.0.0/0"]
+  ingress_port        = 80
+}
 ```
+- module "security_group_ecs_task_server"
+```bash
+  module "security_group_ecs_task_server" {
+  source          = "./Modules/SecurityGroup/SecurityGroupWithMysql"
+  name            = "ecs-task-${var.environment_name}-server"
+  description     = "Controls access to the server ECS task"
+  vpc_id          = module.networking.aws_vpc
+  ingress_port    = var.port_app_server
+  security_groups = [module.security_group_alb_server.sg_id]
 
-To learn more about Amazon ECS Autoscaling, please take a look to [this](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-auto-scaling.html) documentation.
-## Application Code
 
-### Client app
-
-The Client folder contains the code to run the frontend. This code is written in Vue.js and uses the port 80 in the deployed version, but when run localy it uses port 3000.
-
-The application folder structure is separeted in components, views and services, despite the router and the assets.
-
-### Client considerations due to demo proposals
-1) The assets used by the client application are going to be requested from the S3 bucket created with this code. Please add 3 images to the created S3 bucket.
-
-2) The DynamoDB structure used by the client application is the following one:
-
-```shell
-  - id: N (HASH)
-  - path: S
-  - title: S
-```
-Feel free to change the structure as needed. But in order to have full demo experience, please add 3 DynamoDB Items with the specified structure from above. Below is an example.
-
-*Note: The path attribute correspondes to the S3 Object URL of each added asset from the previous step.*
-
-Example of a DynamoDB Item:
-
-```json
-{
-  "id": {
-    "N": "1"
-  },
-  "path": {
-    "S": "https://mybucket.s3.eu-central-1.amazonaws.com/MyImage.jpeg"
-  },
-  "title": {
-    "S": "My title"
-  }
 }
 ```
 
-### Server app
+- module "security_group_ecs_task_client"
+```bash
+  module "security_group_ecs_task_client" {
+  source          = "./Modules/SecurityGroup/SecurityGroupWithoutMysql"
+  name            = "ecs-task-${var.environment_name}-client"
+  description     = "Controls access to the client ECS task"
+  vpc_id          = module.networking.aws_vpc
+  ingress_port    = var.port_app_client
+  security_groups = [module.security_group_alb_client.sg_id]
 
-The Server folder contains the code to run the backend. This code is written in Node.js and uses the port 80 in the deployed version, but when run localy it uses port 3001.
-
-Swagger was also implemented in order to document the APIs. The Swagger endpoint is provided as part of the Terraform output, you can grab the output link and access it through a browser.
-
-The server exposes 3 endpoints:
-- /status: serves as a dummy endpoint to know if the server is up and running. This one is used as the health check endpoint by the AWS ECS resources
-- /api/getAllProducts: main endpoint, which returns all the Items from an AWS DynamoDB table
-- /api/docs: the Swagger enpoint for the API documentation
-
-## Cleanup
-
-Run the following command if you want to delete all the resources created before:
-
-```shell
-terraform destroy -var aws_profile="your-profile" -var AWS_REGION="your-region" -var environment_name="your-env" -var github_token="your-personal-token" -var repository_name="your-github-repository" - var repository_owner="the-github-repository-owner"
+}
 ```
 
-## Security
+- module "codebuild_server" 
 
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+```bash
+module "codebuild_server" {
+  source                 = "./Modules/CodeBuild"
+  name                   = "codebuild-${var.environment_name}-server"
+  iam_role               = module.devops_role.arn_role
+  region                 = var.aws_region
+  account_id             = data.aws_caller_identity.id_current_account.account_id
+  ecr_repo_url           = module.ecr_server.ecr_repository_url
+  folder_path            = var.folder_path_server
+  buildspec_path         = var.buildspec_path
+  task_definition_family = module.ecs_taks_definition_server.task_definition_family
+  container_name         = var.container_name["server"]
+  service_port           = var.port_app_server
+  ecs_role               = var.iam_role_name["ecs"]
+  ecs_task_role          = var.iam_role_name["ecs_task_role"]
+  db_host                     = var.db_host
+  db_user                     = var.db_user
+  db_password                 = var.db_password
+  db_name                     = var.db_name
+  secret_key                  = var.secret_key
+  algorithm                   = var.algorithm
+  access_token_expire_minutes = var.access_token_expire_minutes
+  docker_hub_username         = var.docker_hub_username
+  docker_hub_password         = var.docker_hub_password
+}
+```
+- module "codebuild_client" 
+```bash
+   module "codebuild_client" {
+  source                      = "./Modules/CodeBuild"
+  name                        = "codebuild-${var.environment_name}-client"
+  iam_role                    = module.devops_role.arn_role
+  region                      = var.aws_region
+  account_id                  = data.aws_caller_identity.id_current_account.account_id
+  ecr_repo_url                = module.ecr_client.ecr_repository_url
+  folder_path                 = var.folder_path_client
+  buildspec_path              = var.buildspec_path
+  task_definition_family      = module.ecs_taks_definition_client.task_definition_family
+  container_name              = var.container_name["client"]
+  service_port                = var.port_app_client
+  ecs_role                    = var.iam_role_name["ecs"]
+  server_alb_url              = module.alb_server.dns_alb
+  db_host                     = var.db_host
+  db_user                     = var.db_user
+  db_password                 = var.db_password
+  db_name                     = var.db_name
+  secret_key                  = var.secret_key
+  algorithm                   = var.algorithm
+  access_token_expire_minutes = var.access_token_expire_minutes
+  docker_hub_username         = var.docker_hub_username
+  docker_hub_password         = var.docker_hub_password
+}
+```
 
-## License
-This library is licensed under the MIT-0 License. See the [LICENSE](LICENSE) file.
+8. On aws-ecs-fullstack-app-terraform/Infrastructure/variable.tf file, I added this variables as per requirements of my project. And set port_app_server and port_app_client default to port 80
+
+```bash
+variable "db_host" {
+  description = "RDS Enpoint"
+  type        = string
+}
+
+variable "db_user" {
+  description = "RDS username"
+  type        = string
+}
+
+
+variable "db_password" {
+  description = "RDS password"
+  type        = string
+}
+
+variable "db_name" {
+  description = "RDS database"
+  type        = string
+
+}
+
+variable "secret_key" {
+  description = "JWT Token Secret Key"
+  type        = string
+
+}
+
+
+variable "algorithm" {
+  description = "JWT Used algorithm"
+  type        = string
+}
+
+variable "access_token_expire_minutes" {
+  type    = number
+  default = 0
+}
+
+variable "docker_hub_username" {
+  type    = string
+  default = ""
+}
+
+variable "docker_hub_password" {
+  type    = string
+  default = ""
+}
+```
+9. Create aws-ecs-fullstack-app-terraform/Infrastructure/terraform.tfvars file add it variables 
+
+```bash
+aws_profile                 = <REPLACE IT WITH YOUR AWS PROFILE> #make sure that this profile as enough credentials do this project..For simplicity, Make your    credentials as Administrator  
+aws_region                  = <REPLACE IT WITH YOUR AWS REGION>
+environment_name            = "development"
+github_token                = <REPLACE IT WITH YOUR GITHUB TOKEN>
+repository_name             = <REPLACE IT WITH YOUR GITHUB REPO NAME>
+repository_owner            = <REPLACE IT WITH YOUR GITHUB REPO OWNER>
+secret_key                  = <REPLACE IT WITH YOUR SECRET KEY>
+algorithm                   = "HS256"
+access_token_expire_minutes = 60
+docker_hub_username         = <REPLACE IT WITH YOUR DOCKERHUB USERNAME>
+docker_hub_password         = <REPLACE IT WITH YOUR DOCKERHUB PASSWORD>
+
+db_host     = "localhost"
+db_user     = "user01"
+db_password = "password"
+db_name     = "dbtest"
+
+``` 
+Important Note: the value that you input in terraform.tfvars must not be on pubic or cannot be share because it contains sensitive informations. Make sure you will add this to your .gitignore file.
+
+10. cd to aws-ecs-fullstack-app-terraform/Infrastructure and invoke the commands:
+- terraform init: Initializes Terraform in the working directory.
+- terraform validate: Checks the configuration for syntax errors.
+- terraform fmt: Formats Terraform files to standard style.
+- terraform plan: Previews the changes Terraform will make.
+- terraform apply: Executes the changes to infrastructure.
+
+
+
+
