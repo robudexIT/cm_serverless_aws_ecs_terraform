@@ -1,7 +1,7 @@
 # CDR MONITORING APP (SERVERLESS) AWS ECS FARGATE
 
 
-In this project, I utilized the infrastructure setup provided in the [aws-samples repository](https://github.com/aws-samples/amazon-ecs-fullstack-app-terraform) as a foundation. This repository contains a Terraform configuration for deploying a full-stack application on Amazon ECS, which I adapted to meet the specific requirements of my project. Again, as part of my journey in learning DevOps and coding, I plan to build a similar project on-premises and then transition it to a serverless architecture, this time using AWS ECS.
+In this project, I utilized the infrastructure setup provided in the [aws-samples repository](https://github.com/aws-samples/amazon-ecs-fullstack-app-terraform) as a foundation. This repository contains a Terraform configuration for deploying a full-stack application on Amazon ECS, which I adapted to meet the specific requirements of my project. Again, as part of my journey in learning DevOps and coding, I plan to build a similar project on-premises and then transition it to a serverless architecture, this time using **AWS ECS**.
 
 
 
@@ -25,34 +25,47 @@ In this project, I utilized the infrastructure setup provided in the [aws-sample
 
 **Technologies Used**
 - Frontend --> AWS ECS FARGATE
-- Backend --> AWS ECS FARGATE
+- Backend --> AWS ECS FARGATE 
 - Database --> RDS Mysql
 - Authentication -->  JWT TOKEN
 - Infrastructure As Code - Terraform
 
-** I made only minimal adjustments to the Terraform infrastructure from this project to suit my needs. I tweaked a few settings, removed resources that were unnecessary for my project, and added the ones I required**
+## Pipeline Arch. 
+
+![Pipeline_Arch](Documentation_assets/CICD_architecture.png)
+
+
+**I made only minimal adjustments to the Terraform infrastructure from this project to suit my needs. I tweaked a few settings, removed resources that were unnecessary for my project, and added the ones I required**
 
 Resource Remove:
- - Dynamodb -> Because my project is using MySQL Database I replace it with RDS Instance 
+ - **Dynamodb** -> Because my project is using MySQL Database I replace it with RDS Instance 
 
 Resource Added and Update:
-- RDS Database
-- Security Group -  I split SecurityGroup Modules, one is with Mysql Rule and one without.
-- CodeBuild - Added more environment variables 
-- buildspec.yaml - also change base on my project requirements
-- Code - My frontend and backend code. Dockerfiles are updated as well.
+- **RDS Database**
+- **Security Group** -  I split **SecurityGroup Modules**, one is with Mysql Rule and one without.
+- **CodeBuild** - Added more environment variables 
+- **buildspec.yaml** - also change base on my project requirements
+- **Code** - My frontend and backend code. Dockerfiles are updated as well.
 
 
 ## Project Implementation and Walkthrough
 
+## SECTION 1 - Project Setup.
 1. Clone the aws-samples [amazon-ecs-fullstack-app-terraform](https://github.com/aws-samples/amazon-ecs-fullstack-app-terraform.git) 
 
 ```bash
    git clone https://github.com/aws-samples/amazon-ecs-fullstack-app-terraform.git
 ```
 
+2. Create a new repository on GitHub (**you can choose the name**). Change the remote URL to your new repository and push the project to your new repository:
 
-2. Update aws-ecs-fullstack-app-terraform/Infrastructure/Templates/buildspec.yaml to
+```bash
+   cd amazon-ecs-fullstack-app-terraform
+   git remote set-url origin <your-repo-url> 
+   git push -u origin main
+```
+
+3. Update **aws-ecs-fullstack-app-terraform/Infrastructure/Templates/buildspec.yaml** as follows:
 
 ```yaml
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -132,12 +145,13 @@ artifacts:
 
 ```
 
-3. Split SecurityGroup in two  Modules
-- aws-ecs-fullstack-app-terraform/Infrastructure/Modules/SecurityGroup/SecurityGroupWithMysql => Include Mysql Inbound Rules.
+4.Split the Security Group into two modules:
+
+- aws-ecs-fullstack-app-terraform/Infrastructure/Modules/SecurityGroup/SecurityGroupWithMysql => Includes MySQL Inbound Rules.
 - aws-ecs-fullstack-app-terraform/Infrastructure/Modules/SecurityGroup/SecurityGroupWithMysql => No Inbound Rules Included.
 
 
-4. Added variables aws-ecs-fullstack-app-terraform/Infrastructure/Modules/CodeBuild/variables.tf  and Comment dynamodb variable.
+5.Add variables to **aws-ecs-fullstack-app-terraform/Infrastructure/Modules/CodeBuild/variables.tf** and comment out the DynamoDB variable.
 
 ```bash 
 
@@ -196,7 +210,9 @@ variable "docker_hub_password" {
   default = ""
 }
 ```
-5. Add these environments variables on aws-ecs-fullstack-app-terraform/Infrastructure/Modules/CodeBuild/main.tf as well. And comment the dynamodb environment variable.
+
+6. Add these environment variables in **aws-ecs-fullstack-app-terraform/Infrastructure/Modules/CodeBuild/main.tf** as well, and comment out the DynamoDB environment variable.
+
 
 ```bash
     environment_variable {
@@ -242,10 +258,11 @@ variable "docker_hub_password" {
        
 ```
 
-6. On aws-ecs-fullstack-app-terraform/Code, I deleted client and backend folder. And replace it with my project code.
+7. On **aws-ecs-fullstack-app-terraform/Code**, I delete client and backend folders. And replace it with my project code.
 
 
-7. On aws-ecs-fullstack-app-terraform/Infrastructure/main.tf file, I comment any dynamodb  related resources and settings and update some settings.
+8. In the **aws-ecs-fullstack-app-terraform/Infrastructure/main.tf** file, comment out any DynamoDB-related resources and settings, and update some settings.
+
 - module "security_group_alb_server" 
 ```bash
   module "security_group_alb_server" {
@@ -353,7 +370,7 @@ module "codebuild_server" {
 }
 ```
 
-8. On aws-ecs-fullstack-app-terraform/Infrastructure/variable.tf file, I added this variables as per requirements of my project. And set port_app_server and port_app_client default to port 80
+9. In the **aws-ecs-fullstack-app-terraform/Infrastructure/variables.tf** file, I added the necessary variables to meet the requirements of my project and set the default values for **port_app_server** and **port_app_client** to port **80**.
 
 ```bash
 variable "db_host" {
@@ -405,7 +422,7 @@ variable "docker_hub_password" {
   default = ""
 }
 ```
-9. Create aws-ecs-fullstack-app-terraform/Infrastructure/terraform.tfvars file add it variables 
+10. Create a **terraform.tfvars** file in the **aws-ecs-fullstack-app-terraform/Infrastructure** directory and add the required variables.
 
 ```bash
 aws_profile                 = <REPLACE IT WITH YOUR AWS PROFILE> #make sure that this profile as enough credentials do this project..For simplicity, Make your    credentials as Administrator  
@@ -426,14 +443,194 @@ db_password = "password"
 db_name     = "dbtest"
 
 ``` 
-Important Note: the value that you input in terraform.tfvars must not be on pubic or cannot be share because it contains sensitive informations. Make sure you will add this to your .gitignore file.
+**_Important Note: The values you input in terraform.tfvars must not be shared publicly as they contain sensitive information. Ensure that you add this file to your .gitignore to prevent it from being tracked in version control._**
 
-10. cd to aws-ecs-fullstack-app-terraform/Infrastructure and invoke the commands:
+11. Now that everything is set, it's time to build the infrastructure for our project using Terraform. But first, let's commit our changes to the repository.
+
+```bash
+   git add .
+   git commit -m "update settings"
+   git push
+```
+
+
+
+## Section 2 - Building The Infrustuctures
+
+The Command that we use in this section are:
 - terraform init: Initializes Terraform in the working directory.
 - terraform validate: Checks the configuration for syntax errors.
 - terraform fmt: Formats Terraform files to standard style.
 - terraform plan: Previews the changes Terraform will make.
 - terraform apply: Executes the changes to infrastructure.
+
+1. cd to /aws-ecs-fullstack-app-terraform/Infrastructure and run the Terraform commands.
+
+```bash
+   cd /aws-ecs-fullstack-app-terraform/Infrastructure
+   terraform init
+   terraform validate 
+   terraform fmt
+   terraform plan
+   terraform apply
+```
+
+![terraform_init](Documentation_assets/terraform_init.png)
+
+
+![terraform_plan](Documentation_assets/terraform_plan.png)
+
+2.When Terraform is done, double-check the AWS console to ensure the resources have indeed been created.
+
+**VPC:**
+
+![terraform_plan](Documentation_assets/terraform_vpc.png)
+
+
+**SecurityGroup:**
+
+![terraform_plan](Documentation_assets/terraform_sg.png)
+
+
+**NatGateway:**
+
+![terrafom_nat_gateways.png](Documentation_assets/terrafom_nat_gateways.png)
+
+
+**Application LoadBalancer**
+
+![terraform_alb.png](Documentation_assets/terraform_alb.png)
+
+**TargetGroup**
+
+
+![terraform_tg.png](Documentation_assets/terraform_tg.png)
+
+
+![terraform_tg_target_client.png](Documentation_assets/terraform_tg_target_client.png)
+
+![terraform_tg_target_server.png](Documentation_assets/terraform_tg_target_server.png)
+
+
+**AWS ECS**
+
+![terraform_ecs.png](Documentation_assets/terraform_ecs.png)
+
+![terraform_ecs_svc.png](Documentation_assets/terraform_ecs_svc.png)
+
+
+**CodePipeline**
+
+![terraform_alb.png](Documentation_assets/terraform_pipeline.png)
+
+
+3. Now that the AWS resources are created successfully, it's time to launch the **RDS instance**. First, I'll allow my IP address to access the RDS instance so I can restore the database.
+
+
+![terraform_plan](Documentation_assets/add_inbound_rule_mysql_temp.png)
+
+
+**Launch RDS**
+- Allow Public Access Temporarily:
+
+![rds_allow public_access.png](Documentation_assets/rds_allow_public_access.png)
+
+- Other Seetings: (Note if you choose autogenerated password, dont forget to save the password)
+  
+![rds_credentials.png](Documentation_assets/rds_credentials.png)
+
+![rds_credentials.png](Documentation_assets/rds_credentials.png)
+
+![rds_db_name.png](Documentation_assets/rds_db_name.png)
+
+- Wait for the RDS instance to be created and for its status to become **'Available.'** Then, restore the db.sql file.
+
+
+![rds_running.png](Documentation_assets/rds_running.png)
+
+![rds_endpoint.png](Documentation_assets/rds_endpoint.png)
+
+
+```bash
+   mysql -u <YOUR_DB_USER> -h <YOUR-DB-ENDPOINT> --database <YOUR-DB-NAME> -p  < db.sql
+
+```
+- Verify if the database restoration was successful.
+
+![db_restored.png](Documentation_assets/db_restored.png)
+
+- Remove the security group rule that allows external access to MySQL.
+
+![delete_mysql_inbound_rule_public.png](Documentation_assets/delete_mysql_inbound_rule_public.png)
+
+- Remove RDS public access
+
+![rds_turn_private.png](Documentation_assets/rds_turn_private.png)
+
+
+- "Update the **terraform.tfvars** file with the RDS configuration by setting the **db_host, db_user, db_name, and db_password** variables.
+
+
+4. Once the **terraform.tfvars** file is updated with the new RDS values, run the Terraform commands again.
+
+```bash
+   cd /aws-ecs-fullstack-app-terraform/Infrastructure
+   terraform init
+   terraform validate 
+   terraform fmt
+   terraform plan
+   terraform apply
+```
+
+5. Once Terraform is done, commit and push the changes to your GitHub to trigger the pipeline. Then, wait for the pipeline to complete.
+
+![source_success.png](Documentation_assets/source_success.png)
+
+![build_deploy_success.png](Documentation_assets/build_deploy_success.png)
+
+6. Test the app by copying the **Client ALB endpoint**, pasting it into the browser, appending **/cm_app/login** at the end, and pressing Enter.
+
+![client_alb_endpoint.png](Documentation_assets/client_alb_endpoint.png)
+
+
+![success_login.png](Documentation_assets/success_login.png)
+
+
+![success_test_app01.png](Documentation_assets/success_test_app01.png)
+
+
+![success_test_app02.png](Documentation_assets/success_test_app02.png)
+
+
+## Final Thoughts and Next Steps
+This project marks a significant milestone in my DevOps journey, blending on-premise solutions with serverless architecture on AWS. The implementation of this CDR Monitoring App on AWS ECS Fargate allowed me to explore various AWS services, deepen my understanding of Terraform, and hone my skills in infrastructure automation.
+
+## Future Enhancements
+**Scalability**: Explore auto-scaling strategies for both ECS tasks and RDS instances to handle varying loads.
+**Monitoring and Logging**: Implement comprehensive monitoring and logging using AWS CloudWatch, X-Ray, and other tools to gain deeper insights into application performance.
+**Security Enhancements**: Introduce IAM roles with least privilege principles, enable VPC endpoints, and explore other AWS security best practices.
+
+**Contribution and Learning**
+The DevOps and cloud communities have been invaluable in my learning process. I plan to contribute back by sharing my experiences, writing blog posts, and possibly even creating my own sample repositories. Feedback and suggestions from the community are always welcome.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
